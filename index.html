@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced 2D Metaverse Voting - Light Mode</title>
+  <!-- Google Fonts for enhanced typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Roboto', sans-serif;
+      background: #f2f2f2;
+      color: #333;
+    }
+    #gameContainer {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    /* Advanced overlay UI styling for light mode */
+    #overlay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      animation: fadeIn 1s ease-out;
+    }
+    #overlay h2 {
+      margin: 0 0 10px;
+      color: #00796b;
+      font-size: 28px;
+    }
+    #overlay button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #00897b;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background 0.3s, transform 0.3s;
+      color: #fff;
+    }
+    #overlay button:hover {
+      background: #00695c;
+      transform: scale(1.05);
+    }
+    #walletStatus, #voteTotals {
+      font-size: 16px;
+      margin: 5px 0;
+      line-height: 1.5;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer"></div>
+  <div id="overlay">
+    <h2>University Voting</h2>
+    <button id="connectBtn">Connect Wallet</button>
+    <div id="walletStatus">Not connected</div>
+    <div id="voteTotals"></div>
+  </div>
+
+  <!-- Phaser 3 Library -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <script>
+    // =================== SIMULATED BLOCKCHAIN/VOTING SETUP ===================
+    // Candidate data with vote counts and pastel base colors.
+    const candidates = {
+      "Pranav": { votes: 0, baseColor: 0x4fc3f7 },    // light blue
+      "Partha": { votes: 0, baseColor: 0xff8a65 },      // light orange
+      "Nandu": { votes: 0, baseColor: 0xa5d6a7 }    // light green
+    };
+
+    let walletAccount = null;
+    function updateOverlay() {
+      document.getElementById("walletStatus").innerText =
+        walletAccount ? ("✅ Connected: " + walletAccount) : "Not connected";
+      let totalsHTML = "<strong>Vote Totals:</strong><br>";
+      for (let name in candidates) {
+        totalsHTML += `${name}: ${candidates[name].votes} votes<br>`;
+      }
+      document.getElementById("voteTotals").innerHTML = totalsHTML;
+    }
+
+    document.getElementById("connectBtn").addEventListener("click", () => {
+      // Simulate wallet connection by generating a random wallet address
+      walletAccount = "0x" + Math.random().toString(16).substr(2, 8).toUpperCase();
+      updateOverlay();
+    });
+
+    function hasVoted() {
+      return localStorage.getItem("voted_" + walletAccount);
+    }
+    function recordVote() {
+      localStorage.setItem("voted_" + walletAccount, "true");
+    }
+    function castVote(candidateName) {
+      if (!walletAccount) {
+        alert("Please connect your wallet first!");
+        return;
+      }
+      if (hasVoted()) {
+        alert("You have already voted!");
+        return;
+      }
+      candidates[candidateName].votes++;
+      recordVote();
+      updateOverlay();
+    }
+    // =================== END SIMULATION ===================
+
+    // =================== PHASER 3 METAVERSE SETUP ===================
+    const config = {
+      type: Phaser.AUTO,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      parent: "gameContainer",
+      backgroundColor: "#ffffff",
+      scene: { preload, create, update }
+    };
+
+    const game = new Phaser.Game(config);
+    let candidateSprites = {};
+    let particles;
+    let parallaxLayers = [];
+
+    function preload() {
+      // Load multi-layer background images for parallax (light-themed)
+      this.load.image("bg1", "https://i.imgur.com/6N9zO3Z.jpg"); // distant clouds
+      this.load.image("bg2", "https://i.imgur.com/SLG5b7p.jpg"); // mid layer hills
+      this.load.image("bg3", "https://i.imgur.com/V8YOPiP.jpg"); // near layer trees
+
+      // Load candidate images (using placeholder images with candidate names)
+      this.load.image("alice", "https://via.placeholder.com/150/4fc3f7/ffffff?text=Alice");
+      this.load.image("bob", "https://via.placeholder.com/150/ff8a65/ffffff?text=Bob");
+      this.load.image("charlie", "https://via.placeholder.com/150/a5d6a7/ffffff?text=Charlie");
+
+      // Load particle image for vote effect
+      this.load.image("spark", "https://i.imgur.com/3KXyE7Z.png");
+
+      // Load vote sound effect (optional)
+      this.load.audio("voteSound", "https://freesound.org/data/previews/341/341695_6261196-lq.mp3");
+    }
+
+    function create() {
+      // Create parallax background layers
+      const bg1 = this.add.image(config.width/2, config.height/2, "bg1");
+      bg1.setDisplaySize(config.width, config.height);
+      bg1.setScrollFactor(0.1);
+      parallaxLayers.push(bg1);
+
+      const bg2 = this.add.image(config.width/2, config.height/2, "bg2");
+      bg2.setDisplaySize(config.width, config.height);
+      bg2.setScrollFactor(0.3);
+      parallaxLayers.push(bg2);
+
+      const bg3 = this.add.image(config.width/2, config.height/2, "bg3");
+      bg3.setDisplaySize(config.width, config.height);
+      bg3.setScrollFactor(0.5);
+      parallaxLayers.push(bg3);
+
+      // Create candidate sprites and position them evenly
+      const names = Object.keys(candidates);
+      const spacing = config.width / (names.length + 1);
+      names.forEach((name, index) => {
+        let sprite = this.add.sprite(spacing * (index + 1), config.height/2, name.toLowerCase())
+          .setInteractive({ useHandCursor: true });
+        sprite.name = name;
+        sprite.setScale(0.9);
+        candidateSprites[name] = sprite;
+
+        // Tween for subtle pulse and rotation
+        this.tweens.add({
+          targets: sprite,
+          scale: { from: 0.9, to: 1.1 },
+          angle: { from: -2, to: 2 },
+          duration: 2000,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut'
+        });
+
+        // On click, cast vote, play sound, and trigger particle effect
+        sprite.on("pointerdown", () => {
+          castVote(name);
+          this.sound.play("voteSound", { volume: 0.5 });
+          const emitter = particles.createEmitter({
+            x: sprite.x,
+            y: sprite.y,
+            speed: { min: -300, max: 300 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 1, end: 0 },
+            lifespan: 800,
+            blendMode: 'ADD',
+            quantity: 30
+          });
+          this.time.delayedCall(800, () => { emitter.stop(); });
+          this.tweens.add({
+            targets: sprite,
+            tint: 0x00ff00,
+            duration: 300,
+            yoyo: true
+          });
+        });
+      });
+
+      // Create particle manager for spark effects
+      particles = this.add.particles("spark");
+
+      // Display vote totals as text within the Phaser scene
+      this.voteText = this.add.text(20, config.height - 100, "", { fontSize: "24px", fill: "#333", fontFamily: 'Roboto' });
+      updatePhaserVoteText.call(this);
+    }
+
+    function update() {
+      // Animate background layers for parallax effect
+      parallaxLayers.forEach((layer, index) => {
+        layer.tilePositionX += 0.01 * (index + 1);
+      });
+      updatePhaserVoteText.call(this);
+    }
+    function updatePhaserVoteText() {
+      let text = "Vote Totals:\n";
+      for (let name in candidates) {
+        text += `${name}: ${candidates[name].votes}\n`;
+      }
+      if (this.voteText) {
+        this.voteText.setText(text);
+      }
+    }
+
+    window.addEventListener("resize", () => {
+      game.scale.resize(window.innerWidth, window.innerHeight);
+    });
+    updateOverlay();
+  </script>
+</body>
+</html>
