@@ -55,7 +55,7 @@
       margin: 5px 0;
       line-height: 1.5;
     }
-    /* Style for the proctoring video element */
+    /* Proctor video styling */
     #proctorVideo {
       position: absolute;
       top: 20px;
@@ -64,6 +64,8 @@
       border: 2px solid #00e676;
       border-radius: 5px;
       z-index: 10;
+      background: #000;
+      display: none; /* Hidden until camera access is granted */
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
@@ -79,9 +81,11 @@
     <div id="walletStatus">Not connected</div>
     <div id="voteTotals"></div>
   </div>
+  <!-- Pre-created video element for proctoring -->
+  <video id="proctorVideo" autoplay muted playsinline></video>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <script>
-    // Candidate data with a, b, c images
+    // Candidate data
     const candidates = {
       "Pranav Raj": { votes: 0, image: "a.jpg" },
       "Parthasarathi": { votes: 0, image: "b.jpg" },
@@ -106,19 +110,18 @@
       updateOverlay();
 
       // Request access to the user's camera for proctoring
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        let videoElem = document.getElementById("proctorVideo");
-        if (!videoElem) {
-          videoElem = document.createElement("video");
-          videoElem.id = "proctorVideo";
-          videoElem.autoplay = true;
-          document.body.appendChild(videoElem);
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const videoElem = document.getElementById("proctorVideo");
+          videoElem.srcObject = stream;
+          videoElem.style.display = "block"; // Show video element once access is granted
+        } catch (err) {
+          console.error("Error accessing camera: ", err);
+          alert("Unable to access camera for proctoring. Please check your camera permissions.");
         }
-        videoElem.srcObject = stream;
-      } catch (err) {
-        console.error("Error accessing camera: ", err);
-        alert("Unable to access camera for proctoring.");
+      } else {
+        alert("Your browser does not support camera access.");
       }
     });
 
