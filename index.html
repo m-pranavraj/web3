@@ -55,6 +55,16 @@
       margin: 5px 0;
       line-height: 1.5;
     }
+    /* Style for the proctoring video element */
+    #proctorVideo {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 200px;
+      border: 2px solid #00e676;
+      border-radius: 5px;
+      z-index: 10;
+    }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -71,7 +81,7 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <script>
-    // Updated candidate data with a, b, c images in place of random images
+    // Candidate data with a, b, c images
     const candidates = {
       "Pranav Raj": { votes: 0, image: "a.jpg" },
       "Parthasarathi": { votes: 0, image: "b.jpg" },
@@ -79,6 +89,7 @@
     };
 
     let walletAccount = null;
+
     function updateOverlay() {
       document.getElementById("walletStatus").innerText =
         walletAccount ? ("✅ Connected: " + walletAccount) : "Not connected";
@@ -89,9 +100,26 @@
       document.getElementById("voteTotals").innerHTML = totalsHTML;
     }
 
-    document.getElementById("connectBtn").addEventListener("click", () => {
+    document.getElementById("connectBtn").addEventListener("click", async () => {
+      // Generate a pseudo wallet address for demo purposes
       walletAccount = "0x" + Math.random().toString(16).substr(2, 8).toUpperCase();
       updateOverlay();
+
+      // Request access to the user's camera for proctoring
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        let videoElem = document.getElementById("proctorVideo");
+        if (!videoElem) {
+          videoElem = document.createElement("video");
+          videoElem.id = "proctorVideo";
+          videoElem.autoplay = true;
+          document.body.appendChild(videoElem);
+        }
+        videoElem.srcObject = stream;
+      } catch (err) {
+        console.error("Error accessing camera: ", err);
+        alert("Unable to access camera for proctoring.");
+      }
     });
 
     function hasVoted() { return localStorage.getItem("voted_" + walletAccount); }
